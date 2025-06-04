@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nineti_gmbh_assignment/cubit/theme_cubit.dart';
 import '../../blocs/user/user_bloc.dart';
 import '../../blocs/user/user_event.dart';
 import '../../blocs/user/user_state.dart';
@@ -62,6 +63,14 @@ class _UserListScreenState extends State<UserListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Hive', style: TextStyle(color: Colors.white)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.brightness_6, color: Colors.white),
+            onPressed: () {
+              context.read<ThemeCubit>().toggleTheme();
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -83,32 +92,40 @@ class _UserListScreenState extends State<UserListScreen> {
                 if (state is UserLoading && _skip == 0) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is UserLoaded) {
-                  return ListView.builder(
-                    controller: _scrollController,
-                    itemCount: state.users.length,
-                    itemBuilder: (context, index) {
-                      final user = state.users[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.white,
-                          backgroundImage: NetworkImage(user.image),
-                        ),
-                        title: Text('${user.firstName} ${user.lastName}'),
-                        subtitle: Text(user.email),
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/user_detail',
-                            arguments: user,
-                          );
-                        },
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<UserBloc>().add(const ResetUsers());
+                      context.read<UserBloc>().add(
+                        const FetchUsers(isInitial: true),
                       );
                     },
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: state.users.length,
+                      itemBuilder: (context, index) {
+                        final user = state.users[index];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            backgroundImage: NetworkImage(user.image),
+                          ),
+                          title: Text('${user.firstName} ${user.lastName}'),
+                          subtitle: Text(user.email),
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/user_detail',
+                              arguments: user,
+                            );
+                          },
+                        );
+                      },
+                    ),
                   );
                 } else if (state is UserError) {
                   return Center(child: Text(state.message));
                 }
-                return const SizedBox.shrink();
+                return Center(child: const SizedBox(child: Text("Some Issue")));
               },
             ),
           ),

@@ -6,10 +6,17 @@ import 'package:nineti_gmbh_assignment/blocs/user/user_state.dart';
 import 'package:nineti_gmbh_assignment/models/post_model.dart';
 import 'package:nineti_gmbh_assignment/models/todo_model.dart';
 import 'package:nineti_gmbh_assignment/models/user_model.dart';
+import 'package:nineti_gmbh_assignment/screens/create_post/create_post_screen.dart';
 
-class UserDetailScreen extends StatelessWidget {
+class UserDetailScreen extends StatefulWidget {
   const UserDetailScreen({super.key});
 
+  @override
+  State<UserDetailScreen> createState() => _UserDetailScreenState();
+}
+
+class _UserDetailScreenState extends State<UserDetailScreen> {
+  final List<Post> _localPosts = [];
   @override
   Widget build(BuildContext context) {
     final User user = ModalRoute.of(context)!.settings.arguments as User;
@@ -35,6 +42,7 @@ class UserDetailScreen extends StatelessWidget {
           if (state is UserLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is UserDetailLoaded) {
+            final combinedPosts = [...state.posts, ..._localPosts];
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -45,6 +53,7 @@ class UserDetailScreen extends StatelessWidget {
                       CircleAvatar(
                         radius: 30,
                         backgroundImage: NetworkImage(user.image),
+                        backgroundColor: Colors.white,
                       ),
                       const SizedBox(width: 16),
                       Column(
@@ -63,25 +72,67 @@ class UserDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  SizedBox(
+                    width: 125,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade300,
+                      ),
+                      onPressed: () async {
+                        final newPost = await Navigator.push<Post>(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => CreatePostScreen(
+                                  onPostCreated: (post) => post,
+                                ),
+                          ),
+                        );
+
+                        if (newPost != null) {
+                          setState(() {
+                            _localPosts.add(newPost);
+                          });
+                        }
+                      },
+
+                      child: Row(
+                        children: [
+                          const Icon(Icons.add, color: Colors.black),
+                          const Text(
+                            "Add Post",
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   const Text(
                     'Posts',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  state.posts.isEmpty
+                  combinedPosts.isEmpty
                       ? SizedBox(
                         height: 50,
                         child: Center(child: const Text("No posts available.")),
                       )
                       : Column(
                         children:
-                            state.posts
+                            combinedPosts
                                 .map(
                                   (Post post) => Card(
                                     color: Colors.blue.shade50,
                                     child: ListTile(
-                                      title: Text(post.title),
-                                      subtitle: Text(post.body),
+                                      title: Text(
+                                        post.title,
+                                        style: TextStyle(color: Colors.black),
+                                      ),
+                                      subtitle: Text(
+                                        post.body,
+                                        style: TextStyle(color: Colors.black),
+                                      ),
                                     ),
                                   ),
                                 )
@@ -104,8 +155,13 @@ class UserDetailScreen extends StatelessWidget {
                             state.todos
                                 .map(
                                   (Todo todo) => CheckboxListTile(
+                                    checkColor: Colors.black45,
+                                    activeColor: Colors.black45,
                                     tileColor: Colors.blue.shade50,
-                                    title: Text(todo.todo),
+                                    title: Text(
+                                      todo.todo,
+                                      style: TextStyle(color: Colors.black45),
+                                    ),
                                     value: todo.completed,
                                     onChanged: null,
                                   ),
